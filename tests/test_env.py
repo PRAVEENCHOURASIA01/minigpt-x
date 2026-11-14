@@ -47,3 +47,4 @@ def test_mps_matmul_matches_cpu():
     torch.mps.synchronize()
 
     assert torch.allclose(c_mps.cpu(), c_cpu, atol=1e-4, rtol=1e-4)
+
