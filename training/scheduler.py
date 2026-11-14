@@ -1,14 +1,30 @@
 """
-Learning Rate Scheduler (Linear Warmup + Cosine Decay).
-
-This module implements a cosine decay learning rate schedule with warmup:
-1. Linear warmup from 0.0 to learning_rate over warmup_iters
-2. Cosine decay from learning_rate down to min_lr between warmup_iters and max_iters
-3. Constant min_lr for any iterations beyond max_iters
+Learning Rate Scheduler with Linear Warmup and Cosine Decay.
 """
 
-# TODO: Define get_lr(it: int, learning_rate: float, min_lr: float, warmup_iters: int, max_iters: int) -> float
-# TODO: Implement linear warmup phase logic: lr = learning_rate * it / warmup_iters
-# TODO: Implement cosine decay phase logic using math.cos
-# TODO: Implement floor at min_lr for iterations exceeding max_iters
-# TODO: Wrap in a PyTorch LambdaLR or custom scheduler step function
+import math
+
+
+def get_lr(
+    it: int,
+    learning_rate: float,
+    min_lr: float,
+    warmup_iters: int,
+    max_iters: int,
+) -> float:
+    """
+    Computes learning rate for iteration `it` using linear warmup and cosine decay.
+    
+    1. Linear warmup: 0 -> learning_rate over warmup_iters steps.
+    2. Cosine decay: learning_rate -> min_lr between warmup_iters and max_iters.
+    3. Beyond max_iters: keep constant at min_lr.
+    """
+    if it < warmup_iters:
+        return learning_rate * it / max(1, warmup_iters)
+    if it > max_iters:
+        return min_lr
+    # In between, use cosine decay
+    decay_ratio = (it - warmup_iters) / (max_iters - warmup_iters)
+    assert 0.0 <= decay_ratio <= 1.0
+    coeff = 0.5 * (1.0 + math.cos(math.pi * decay_ratio))
+    return min_lr + coeff * (learning_rate - min_lr)

@@ -1,13 +1,32 @@
 """
-Key-Value (KV) Cache for Efficient Autoregressive Generation.
-
-This module provides a KV cache container to store precomputed key and value projection
-tensors across decoding steps, turning O(N^2) generation into O(N) by eliminating redundant
-recomputation of past tokens.
+Key-Value (KV) Cache management for MiniGPT-X inference.
 """
 
-# TODO: Define KVCache class managing past keys and values per Transformer block
-# TODO: Implement update(layer_idx, key, value) -> tuple[torch.Tensor, torch.Tensor]
-# TODO: Concatenate incoming key and value tensors along sequence length dimension
-# TODO: Implement reset() to clear cache between independent generation prompts
-# TODO: Support pre-allocated fixed-size buffers for zero-allocation decode steps
+from typing import List, Optional, Tuple
+import torch
+
+
+class KVCache:
+    """
+    Manages Key-Value tensor caches across all Transformer decoder layers.
+    Eliminates redundant O(N^2) past key/value recomputations during autoregressive decoding.
+    """
+    def __init__(self, n_layer: int):
+        self.n_layer = n_layer
+        self.caches: List[Optional[Tuple[torch.Tensor, torch.Tensor]]] = [None] * n_layer
+
+    def get_layer_cache(self, layer_idx: int) -> Optional[Tuple[torch.Tensor, torch.Tensor]]:
+        return self.caches[layer_idx]
+
+    def update_layer_cache(self, layer_idx: int, cache: Tuple[torch.Tensor, torch.Tensor]):
+        self.caches[layer_idx] = cache
+
+    def reset(self):
+        """Clears all stored key and value tensors."""
+        self.caches = [None] * self.n_layer
+
+    def current_seq_len(self) -> int:
+        """Returns sequence length of the currently stored keys."""
+        if self.caches[0] is None:
+            return 0
+        return self.caches[0][0].shape[2]

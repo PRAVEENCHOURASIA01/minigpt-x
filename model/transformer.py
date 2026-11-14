@@ -23,7 +23,6 @@ class SwiGLUMLP(nn.Module):
     """
     def __init__(self, n_embd: int, dropout: float = 0.0):
         super().__init__()
-        # 8/3 * n_embd rounded up to multiple of 64
         raw_hidden = int(2.0 * (4.0 * n_embd) / 3.0)
         hidden_dim = ((raw_hidden + 63) // 64) * 64
         self.w_gate = nn.Linear(n_embd, hidden_dim, bias=False)
@@ -32,7 +31,6 @@ class SwiGLUMLP(nn.Module):
         self.dropout = nn.Dropout(dropout) if dropout > 0.0 else nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # F.silu(w_gate(x)) * w_up(x)
         h = F.silu(self.w_gate(x)) * self.w_up(x)
         return self.dropout(self.w_down(h))
 
@@ -101,11 +99,11 @@ class TransformerBlock(nn.Module):
         sin: Optional[torch.Tensor] = None,
         kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         offset: int = 0,
+        use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, torch.Tensor]]]:
-        # Pre-norm architecture
         normed_1 = self.ln_1(x)
         attn_out, new_kv_cache = self.attn(
-            normed_1, cos=cos, sin=sin, kv_cache=kv_cache, offset=offset
+            normed_1, cos=cos, sin=sin, kv_cache=kv_cache, offset=offset, use_cache=use_cache
         )
         x = x + attn_out
         x = x + self.mlp(self.ln_2(x))

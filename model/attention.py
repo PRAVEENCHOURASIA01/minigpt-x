@@ -65,6 +65,7 @@ class CausalSelfAttention(nn.Module):
         sin: Optional[torch.Tensor] = None,
         kv_cache: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         offset: int = 0,
+        use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, torch.Tensor]]]:
         """
         Args:
@@ -72,10 +73,11 @@ class CausalSelfAttention(nn.Module):
             cos, sin: Precomputed RoPE frequency tensors (max_seq_len, head_dim // 2)
             kv_cache: Optional past key, value tensors (B, n_head, past_T, head_dim)
             offset: Current token position offset in the sequence (for KV cache decoding)
+            use_cache: If True, returns updated (key, value) tensors even on initial prefill
             
         Returns:
             out: (B, T, C)
-            new_kv_cache: (key, value) tensors if kv_cache is enabled
+            new_kv_cache: (key, value) tensors if kv_cache is provided or use_cache is True
         """
         B, T, C = x.shape
 
@@ -96,8 +98,10 @@ class CausalSelfAttention(nn.Module):
         # 4. Handle KV Cache
         if kv_cache is not None:
             prev_k, prev_v = kv_cache
-            k = torch.cat([prev_k, k], dim=2)  # concatenate along seq_len dimension
+            k = torch.cat([prev_k, k], dim=2)
             v = torch.cat([prev_v, v], dim=2)
+            new_kv_cache = (k, v)
+        elif use_cache:
             new_kv_cache = (k, v)
         else:
             new_kv_cache = None
@@ -106,8 +110,6 @@ class CausalSelfAttention(nn.Module):
 
         # 5. Attention mechanism
         if self.use_sdpa:
-            # When using KV cache with decode token (T=1, total_kv_len > 1), causal mask is not needed
-            # because the new query can attend to all past tokens.
             is_causal = (T > 1) and (total_kv_len == T)
             y = F.scaled_dot_product_attention(
                 q,
@@ -119,18 +121,13 @@ class CausalSelfAttention(nn.Module):
             )
         else:
             # Manual attention path
-            # att = (Q @ K^T) / sqrt(head_dim) -> (B, n_head, T, total_kv_len)
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(self.head_dim))
             if T > 1 and total_kv_len == T:
-                # Apply causal mask: mask positions where bias is 0
                 mask = self.bias[:, :, :T, :T]
                 att = att.masked_fill(~mask, float("-inf"))
-            elif T == 1 and total_kv_len > 1:
-                # In KV cache single-token decode, query at index offset can attend to all positions 0..offset
-                pass
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
-            y = att @ v  # (B, n_head, T, head_dim)
+            y = att @ v
 
         # 6. Recombine heads: (B, n_head, T, head_dim) -> (B, T, C)
         y = y.transpose(1, 2).contiguous().view(B, T, C)

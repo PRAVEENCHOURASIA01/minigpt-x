@@ -14,14 +14,14 @@ model:
 
 # Training hyperparameters
 training:
-  batch_size: 8          # Number of sequences per micro-batch
+  batch_size: 8          # Number of sequences per micro-batch (8 * 256 = 2,048 tokens/step)
   grad_accum_steps: 1    # Number of micro-batches to accumulate before optimizer step
   learning_rate: 0.001   # Peak learning rate for AdamW optimizer
   min_lr: 0.0001         # Minimum learning rate reached at the end of cosine decay
   weight_decay: 0.1      # Weight decay regularization coefficient for 2D weight tensors
-  max_iters: 5000        # Total number of training iterations (optimizer steps)
-  warmup_iters: 100      # Number of linear warmup steps from 0 to peak learning rate
-  eval_interval: 250     # How often (in iterations) to evaluate validation loss
+  max_iters: 24000       # Total number of training iterations (~75 minutes at 11,200 tokens/sec)
+  warmup_iters: 500      # Number of linear warmup steps from 0 to peak learning rate (~2% of run)
+  eval_interval: 1000    # How often (in iterations) to evaluate validation loss
   eval_iters: 50         # Number of batches to average over during validation evaluation
   grad_clip: 1.0         # Maximum gradient norm threshold for gradient clipping
   seed: 1337             # Random seed for reproducible dataset shuffling and weight init

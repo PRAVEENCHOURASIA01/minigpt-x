@@ -109,7 +109,6 @@ class MiniGPTX(nn.Module):
 
         # 7. Parameter initialization
         self.apply(self._init_weights)
-        # Apply special scaled init to residual projections (GPT-2 standard: 0.02 / sqrt(2 * n_layer))
         for pn, p in self.named_parameters():
             if pn.endswith("c_proj.weight") or pn.endswith("w_down.weight"):
                 torch.nn.init.normal_(p, mean=0.0, std=0.02 / math.sqrt(2 * config.n_layer))
@@ -126,16 +125,12 @@ class MiniGPTX(nn.Module):
         """Counts total trainable model parameters."""
         n_params = sum(p.numel() for p in self.parameters() if p.requires_grad)
         if non_embedding:
-            # If embeddings are tied, lm_head and tok_embeddings share storage
             n_params -= self.tok_embeddings.weight.numel()
         return n_params
 
     def configure_optimizers(
         self, weight_decay: float, learning_rate: float, betas: Tuple[float, float], device_type: str
     ) -> torch.optim.AdamW:
-        """
-        Splits model parameters into decay (2D weight matrices) and no-decay (biases, norms, embeddings).
-        """
         decay_params = []
         nodecay_params = []
         for name, param in self.named_parameters():
@@ -150,9 +145,6 @@ class MiniGPTX(nn.Module):
             {"params": decay_params, "weight_decay": weight_decay},
             {"params": nodecay_params, "weight_decay": 0.0},
         ]
-        num_decay = sum(p.numel() for p in decay_params)
-        num_nodecay = sum(p.numel() for p in nodecay_params)
-        # print(f"Optim groups: {len(decay_params)} decay tensors ({num_decay:,} params), {len(nodecay_params)} no-decay tensors ({num_nodecay:,} params)")
         optimizer = torch.optim.AdamW(optim_groups, lr=learning_rate, betas=betas)
         return optimizer
 
@@ -162,19 +154,8 @@ class MiniGPTX(nn.Module):
         targets: Optional[torch.Tensor] = None,
         kv_caches: Optional[List[Tuple[torch.Tensor, torch.Tensor]]] = None,
         offset: int = 0,
+        use_cache: bool = False,
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[List[Tuple[torch.Tensor, torch.Tensor]]]]:
-        """
-        Args:
-            idx: (B, T) token indices tensor
-            targets: Optional (B, T) target token indices for cross-entropy loss computation
-            kv_caches: Optional list of (key, value) pairs for each layer
-            offset: Starting sequence position offset
-            
-        Returns:
-            logits: (B, T, vocab_size)
-            loss: scalar cross-entropy loss (if targets is provided)
-            new_kv_caches: updated list of KV caches
-        """
         device = idx.device
         B, T = idx.shape
         assert (
@@ -182,7 +163,7 @@ class MiniGPTX(nn.Module):
         ), f"Cannot forward sequence of length {offset + T}, block_size is {self.block_size}"
 
         # 1. Embeddings
-        x = self.tok_embeddings(idx)  # (B, T, C)
+        x = self.tok_embeddings(idx)
         if self.pos_embeddings is not None:
             positions = torch.arange(offset, offset + T, dtype=torch.long, device=device)
             x = x + self.pos_embeddings(positions)
@@ -193,25 +174,25 @@ class MiniGPTX(nn.Module):
         sin = self.rope_sin if self.config.use_rope else None
 
         # 3. Transformer blocks
-        new_kv_caches = [] if kv_caches is not None else None
+        new_kv_caches = [] if (kv_caches is not None or use_cache) else None
         for i, block in enumerate(self.blocks):
             layer_cache = kv_caches[i] if kv_caches is not None else None
-            x, updated_cache = block(x, cos=cos, sin=sin, kv_cache=layer_cache, offset=offset)
+            x, updated_cache = block(
+                x, cos=cos, sin=sin, kv_cache=layer_cache, offset=offset, use_cache=use_cache
+            )
             if new_kv_caches is not None:
                 new_kv_caches.append(updated_cache)
 
         # 4. Final normalization
-        x = self.ln_f(x)  # (B, T, C)
+        x = self.ln_f(x)
 
         # 5. LM Head
         if targets is not None:
-            # Training mode: compute logits and cross entropy
-            logits = self.lm_head(x)  # (B, T, vocab_size)
+            logits = self.lm_head(x)
             loss = F.cross_entropy(
                 logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1
             )
         else:
-            # Inference mode: only compute logits for the active tokens
             logits = self.lm_head(x)
             loss = None
 
