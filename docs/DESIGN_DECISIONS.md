@@ -43,3 +43,4 @@ This document records the empirical evidence, engineering tradeoffs, and rationa
 - Uses standard Python `re` pattern `'(?:[sdmt]|ll|ve|re)| ?[A-Za-z]+| ?[0-9]+| ?[^\sA-Za-z0-9]+|\s+(?!\S)|\s+` to prevent merge contamination across punctuation/whitespace.
 - Byte-level base (256 raw bytes) guarantees 100% lossless roundtrip coverage for any unicode, emoji, or unseen character sequence without `<unk>`.
 - Final token ID 4095 is reserved as `<|endoftext|>`.
+

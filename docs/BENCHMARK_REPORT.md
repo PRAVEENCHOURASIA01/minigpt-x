@@ -13,3 +13,4 @@ This document records the measured performance benchmarks comparing a baseline c
 | **Inference tokens/sec** | TBD - measure | TBD - measure |
 | **First-token latency** | TBD - measure | TBD - measure |
 | **Peak memory** | TBD - measure | TBD - measure |
+

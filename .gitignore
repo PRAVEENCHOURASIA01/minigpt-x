@@ -36,3 +36,4 @@ wandb/
 
 # Note: small CSV/JSON files in experiments/ SHOULD be committed (not ignored)
 
+logs/

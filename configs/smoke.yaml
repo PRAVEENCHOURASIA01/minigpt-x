@@ -34,3 +34,4 @@ data:
   tokenizer_path: "tokenizer/bpe_4096.json"
 
 device: "auto"
+

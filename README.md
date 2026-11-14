@@ -85,3 +85,4 @@ TBD
 ## Limitations
 
 MiniGPT-X is a small educational language model (10–30M parameters) developed strictly for learning and demonstration purposes. It is not an enterprise-grade or production conversational assistant, has limited world knowledge, and will exhibit hallucination.
+

@@ -33,3 +33,4 @@ step,train_loss,val_loss,perplexity,lr,tokens_per_sec,elapsed_s,peak_mem_mb
 ## Committing Experiment Logs
 
 Small CSV and JSON metric files in this folder are intended to be committed to version control to preserve experiment history and enable plotting training curves in reports.
+

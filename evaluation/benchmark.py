@@ -14,3 +14,4 @@ This module benchmarks model inference and training throughput:
 # TODO: Measure decode latency per token (tokens/sec)
 # TODO: Track peak device memory usage during generation
 # TODO: Save benchmark results to docs/BENCHMARK_REPORT.md or JSON
+
