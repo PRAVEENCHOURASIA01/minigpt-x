@@ -1,0 +1,36 @@
+# MiniGPT-X Git Ignore Rules
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# System files
+.DS_Store
+
+# Virtual environments (if any created externally)
+.venv/
+venv/
+ENV/
+env/
+
+# Model checkpoints and weights
+*.pt
+*.pth
+*.bin
+checkpoints/*
+!checkpoints/.gitkeep
+
+# Data directories (raw and processed data ignored, keep gitkeep)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Logging and experiment tracking
+runs/
+wandb/
+.ipynb_checkpoints/
+
+# Note: small CSV/JSON files in experiments/ SHOULD be committed (not ignored)

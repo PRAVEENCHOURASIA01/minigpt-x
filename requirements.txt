@@ -1,0 +1,12 @@
+# Python packages pinned to current environment
+torch==2.15.0
+numpy==2.5.4
+matplotlib==3.11.2
+pyyaml==6.0.3
+tqdm==4.70.1
+pytest==9.2.0
+
+# later phases (install only when needed)
+# datasets
+# fastapi
+# uvicorn
