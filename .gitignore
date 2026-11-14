@@ -8,6 +8,7 @@ __pycache__/
 
 # System files
 .DS_Store
+.vscode/
 
 # Virtual environments (if any created externally)
 .venv/
@@ -34,3 +35,4 @@ wandb/
 .ipynb_checkpoints/
 
 # Note: small CSV/JSON files in experiments/ SHOULD be committed (not ignored)
+

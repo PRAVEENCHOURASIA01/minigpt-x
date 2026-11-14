@@ -5,8 +5,9 @@ matplotlib==3.11.2
 pyyaml==6.0.3
 tqdm==4.70.1
 pytest==9.2.0
-
-# later phases (install only when needed)
-# datasets
-# fastapi
-# uvicorn
+datasets==5.2.0
+huggingface_hub==2.4.0
+fastapi==0.163.0
+uvicorn==0.54.0
+httpx==0.28.1
+pydantic==2.14.3
