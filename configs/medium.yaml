@@ -4,8 +4,8 @@ model:
   n_head: 6            # Number of attention heads in multi-head attention
   n_embd: 384          # Embedding dimension size (channels per token)
   block_size: 256      # Maximum sequence context window length in tokens
-  dropout: 0.1         # Dropout probability applied during training
-  vocab_size: null     # Vocabulary size (TBD until the BPE tokenizer is trained)
+  dropout: 0.0         # Dropout probability applied during training (0.0 for main run)
+  vocab_size: 4096     # Vocabulary size (trained BPE tokenizer)
   use_rope: true       # Use Rotary Position Embeddings (RoPE) instead of absolute embeddings
   norm_type: "rmsnorm" # Normalization layer type: 'rmsnorm' or 'layernorm'
   activation: "swiglu" # Feed-forward activation function: 'swiglu' or 'relu'
@@ -31,7 +31,7 @@ training:
 data:
   dataset: "tinystories"                       # Dataset name or identifier
   train_split: 0.9                             # Proportion of data used for training vs validation
-  tokenizer_path: "data/processed/bpe.model"   # Path to trained tokenizer model file
+  tokenizer_path: "tokenizer/bpe_4096.json"    # Path to trained tokenizer JSON file
 
 # Execution hardware
 device: "auto" # Target hardware device: 'auto' (prefers 'mps' then 'cuda' then 'cpu')
