@@ -1,0 +1,12 @@
+{
+  "checkpoint": "checkpoints/main_best.pt",
+  "device": "mps",
+  "parameters": 12194688,
+  "val_loss_nats": 1.6334700906276702,
+  "perplexity_per_token": 5.121616391165208,
+  "measured_tokens_per_byte": 0.25108380323667107,
+  "measured_bytes_per_token": 3.982734,
+  "bits_per_byte": 0.5917038896368638,
+  "eval_windows": 6400,
+  "block_size": 256
+}
